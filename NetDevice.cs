@@ -1,4 +1,7 @@
-﻿using System;
+﻿using PacketDotNet;
+using RoundHouse.Annotations;
+using RoundHouse.Properties;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -9,12 +12,6 @@ using System.Net.Sockets;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
-using PacketDotNet;
-using PacketDotNet.Lldp;
-using RoundHouse.Annotations;
-using RoundHouse.Properties;
-using ProtocolType = PacketDotNet.ProtocolType;
 
 namespace RoundHouse
 {
@@ -53,10 +50,10 @@ namespace RoundHouse
             DnsLookup();
             NetBiosLookup();
 
-            foreach(var port in StandardPorts.NamedPorts.Keys)
+            foreach (var port in StandardPorts.NamedPorts.Keys)
                 ScanPort(port);
 
-            ScanPort(21);            
+            ScanPort(21);
             ScanPort(23);
             ScanPort(80);
             ScanPort(443);
@@ -65,10 +62,6 @@ namespace RoundHouse
             ScanPort(12320);
             ScanPort(12321);
             ScanPort(12322);
-
-            
-            
-
         }
 
         public void Ping()
@@ -89,7 +82,6 @@ namespace RoundHouse
 
         public void AddPing(PingReply reply)
         {
-            
             _reply = reply;
             LastPing = DateTime.Now;
         }
@@ -122,7 +114,6 @@ namespace RoundHouse
                     }
                     else
                         DNSRecord = "null";
-
                 }
                 catch (SocketException ex)
                 {
@@ -135,7 +126,7 @@ namespace RoundHouse
         {
             if (_mac != null && !_lookedUpMac)
             {
-                if(Settings.Default.MacVendors == null)
+                if (Settings.Default.MacVendors == null)
                     Settings.Default.MacVendors = new MacDictionary();
 
                 string s = "";
@@ -156,21 +147,17 @@ namespace RoundHouse
                         Settings.Default.MacVendors.AddEntry(_mac.ToString(), s);
                         Settings.Default.Save();
                     }
-                    catch(WebException e)
+                    catch (WebException e)
                     {
-                        if(e.Message.Contains("404"))
+                        if (e.Message.Contains("404"))
                         {
                             MACVendor = "Not Found";
                         }
                         else
                             MACVendor = e.Message;
                     }
-                    
-                    
                 }
 
-
-               
                 _lookedUpMac = true;
             }
         }
@@ -279,9 +266,9 @@ namespace RoundHouse
                 _scannedPorts.AddOrUpdate(scanport, doesWebClientConnect, (i, b) => b);
                 var ports = _scannedPorts.Where(pair => pair.Value).Select(pair => pair.Key).ToList();
                 var portstrings = new List<string>();
-                foreach(var port in ports)
+                foreach (var port in ports)
                 {
-                    if(StandardPorts.NamedPorts.ContainsKey(port))
+                    if (StandardPorts.NamedPorts.ContainsKey(port))
                         portstrings.Add(StandardPorts.NamedPorts[port].ToString());
                     else
                         portstrings.Add(port.ToString());
@@ -298,7 +285,7 @@ namespace RoundHouse
                 try
                 {
                     tcpClient.Connect(ip, port);
-                    
+
                     return true;
                 }
                 catch (SocketException ex)
@@ -360,7 +347,6 @@ namespace RoundHouse
 
         public long RoundTrip => _reply?.RoundtripTime ?? 0;
 
-
         public event PropertyChangedEventHandler PropertyChanged;
 
         [NotifyPropertyChangedInvocator]
@@ -370,7 +356,7 @@ namespace RoundHouse
         }
 
         /// <summary>
-        /// Get the NetBIOS machine name and domain / workgroup name by ip address using UPD datagram at port 137. Based on code I found at microsoft 
+        /// Get the NetBIOS machine name and domain / workgroup name by ip address using UPD datagram at port 137. Based on code I found at microsoft
         /// </summary>
         /// <returns>True if getting an answer on port 137 with a result</returns>
         public static bool GetRemoteNetBiosName(IPAddress targetAddress, out string nbName, out string nbDomainOrWorkgroupName, int receiveTimeOut = 5000, int retries = 1)
@@ -427,7 +413,6 @@ namespace RoundHouse
                 }
 
                 retries--;
-
             } while (retries >= 0);
 
             return false;
@@ -452,7 +437,7 @@ namespace RoundHouse
 
     public static class StandardPorts
     {
-        public static Dictionary<int,string> NamedPorts = new Dictionary<int, string> {
+        public static Dictionary<int, string> NamedPorts = new Dictionary<int, string> {
             {22, "SSH" },
             {161, "SNMP Client" },
             {162, "SNMP Server" },
@@ -652,8 +637,6 @@ namespace RoundHouse
                 995  ,
                 1010 ,
                 1023
-
         };
-
     }
 }

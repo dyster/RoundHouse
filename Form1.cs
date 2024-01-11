@@ -1,23 +1,15 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using PacketDotNet;
+using RoundHouse.Properties;
+using SharpPcap;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
-using System.Drawing;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Windows.Forms;
-using System.Windows.Forms.VisualStyles;
-using BrightIdeasSoftware;
-using PacketDotNet;
-using RoundHouse.Annotations;
-using RoundHouse.Properties;
-using SharpPcap;
-using SharpPcap.Npcap;
 
 namespace RoundHouse
 {
@@ -32,10 +24,7 @@ namespace RoundHouse
         public Form1()
         {
             InitializeComponent();
-            Settings.Default.SettingsLoaded += Default_SettingsLoaded;           
-            
-            
-            
+            Settings.Default.SettingsLoaded += Default_SettingsLoaded;
 
             ThreadPool.SetMinThreads(50, 50);
         }
@@ -48,7 +37,7 @@ namespace RoundHouse
 
         private bool FilterPredicate(object o)
         {
-            var device = (NetDevice) o;
+            var device = (NetDevice)o;
 
             if (device.MAC != null) return true;
             if (device.Arps > 0) return true;
@@ -75,7 +64,7 @@ namespace RoundHouse
                 }
                 else
                 {
-                    foreach (var netDevice in netDevices) 
+                    foreach (var netDevice in netDevices)
                         _netDevices.Add(netDevice);
                 }
             }
@@ -97,7 +86,7 @@ namespace RoundHouse
                     _arpBuffer.Add(arp);
                 }
             }
-            else if(packet.PayloadPacket is IPv6Packet)
+            else if (packet.PayloadPacket is IPv6Packet)
             {
                 // ignore
             }
@@ -107,24 +96,19 @@ namespace RoundHouse
 
                 if (ipv4.Protocol == ProtocolType.Icmp)
                 {
-
                 }
                 else if (ipv4.Protocol == ProtocolType.Igmp)
                 {
-
                 }
                 else if (ipv4.Protocol != ProtocolType.Tcp && ipv4.Protocol != ProtocolType.Udp)
                 {
-
                 }
             }
-            else if(packet.PayloadPacket == null)
+            else if (packet.PayloadPacket == null)
             {
-                
             }
             else
             {
-                
             }
         }
 
@@ -144,15 +128,13 @@ namespace RoundHouse
                     var physicalAddress = networkInterface.GetPhysicalAddress();
                     var supports = networkInterface.Supports(NetworkInterfaceComponent.IPv4);
 
-                    
-
                     foreach (UnicastIPAddressInformation ip in ipInterfaceProperties.UnicastAddresses)
                     {
                         if (ip.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
                         {
                             var mask = ip.IPv4Mask;
                             var ipAdd = ip.Address;
-                            if(ipAdd.ToString().StartsWith("169.254"))
+                            if (ipAdd.ToString().StartsWith("169.254"))
                                 continue;
 
                             if (ipAdd.ToString().StartsWith("127.0"))
@@ -160,9 +142,6 @@ namespace RoundHouse
 
                             var bytes = ipAdd.GetAddressBytes();
 
-                            
-                            
-                            
                             for (byte i = 1; i < 255; i++)
                             {
                                 var ipAddress = new IPAddress(new byte[] { bytes[0], bytes[1], bytes[2], i });
@@ -172,30 +151,25 @@ namespace RoundHouse
 
                                     if (ipAddress.ToString() == "192.168.0.15")
                                     {
-
                                     }
 
                                     if (ipAddress.Equals(IPAddress.Parse("192.168.0.15")))
                                     {
-
                                     }
                                 }
                             }
-
                         }
                     }
                 }
-                
             }
 
             var devices = list.Select(ip => new NetDevice(ip, Settings.Default.WaitForPing)).ToList();
 
             AddNetDevice(devices);
 
-            //foreach (var netDevice in devices) 
+            //foreach (var netDevice in devices)
             //    netDevice.Init();
 
-            
             //foreach (var ipAddress in list)
             //{
             //    ThreadPool.QueueUserWorkItem((state) =>
@@ -217,12 +191,9 @@ namespace RoundHouse
             //    ThreadPool.QueueUserWorkItem((state) =>
             //    {
             //        //var doesWebClientConnect = NetDevice.DoesWebClientConnect(ipAddress, 22).Result;
-            //        
+            //
             //    });
             //}
-
-            
-
         }
 
         private void timerAddBuffer_Tick(object sender, EventArgs e)
@@ -286,7 +257,6 @@ namespace RoundHouse
 
         public void PortScan(IPAddress ip)
         {
-
         }
 
         private void Form1_FormClosing(object sender, FormClosingEventArgs e)
@@ -335,7 +305,7 @@ namespace RoundHouse
 
         public void AddEntry(string mac, string vendor)
         {
-            Add(new MacAndVendor(){Mac = mac, Vendor = vendor});
+            Add(new MacAndVendor() { Mac = mac, Vendor = vendor });
         }
     }
 
@@ -362,7 +332,6 @@ namespace RoundHouse
     {
         public BindingListInvoked(List<NetDevice> netDevices) : base(netDevices)
         {
-            
         }
 
         private ISynchronizeInvoke _invoke;
@@ -374,16 +343,15 @@ namespace RoundHouse
 
         //public BindingListInvoked(IList<T> items) { this.DataSource = items; }
 
-        delegate void ListChangedDelegate(ListChangedEventArgs e);
+        private delegate void ListChangedDelegate(ListChangedEventArgs e);
 
         protected override void OnListChanged(ListChangedEventArgs e)
         {
             if (_invoke != null && _invoke.InvokeRequired)
             {
                 var elementAtOrDefault = this.ElementAtOrDefault(e.NewIndex);
-                
-                    IAsyncResult ar = _invoke.BeginInvoke(new ListChangedDelegate(base.OnListChanged), new object[] { e });
-                
+
+                IAsyncResult ar = _invoke.BeginInvoke(new ListChangedDelegate(base.OnListChanged), new object[] { e });
             }
             else
             {
