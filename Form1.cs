@@ -1,6 +1,9 @@
-﻿using PacketDotNet;
+﻿using BrightIdeasSoftware;
+using PacketDotNet;
+using RoundHouse.Annotations;
 using RoundHouse.Properties;
 using SharpPcap;
+using SharpPcap.LibPcap;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -25,14 +28,15 @@ namespace RoundHouse
         {
             InitializeComponent();
             Settings.Default.SettingsLoaded += Default_SettingsLoaded;
+            if(Settings.Default.MacVendors == null)
+                Settings.Default.MacVendors = new MacDictionary();
 
             ThreadPool.SetMinThreads(50, 50);
         }
 
         private void Default_SettingsLoaded(object sender, System.Configuration.SettingsLoadedEventArgs e)
         {
-            if (Settings.Default.MacVendors == null)
-                Settings.Default.MacVendors = new MacDictionary();
+            
         }
 
         private bool FilterPredicate(object o)
@@ -69,10 +73,11 @@ namespace RoundHouse
                 }
             }
         }
-
-        private void CaptureDeviceOnOnPacketArrival(object sender, CaptureEventArgs e)
+               
+        private void CaptureDeviceOnOnPacketArrival(object sender, PacketCapture e)
         {
-            var packet = Packet.ParsePacket(e.Packet.LinkLayerType, e.Packet.Data);
+            var raw = e.GetPacket();
+            var packet = Packet.ParsePacket(raw.LinkLayerType, raw.Data);
             if (packet.PayloadPacket is ArpPacket)
             {
                 var arp = (ArpPacket)packet.PayloadPacket;
@@ -265,13 +270,8 @@ namespace RoundHouse
         }
 
         private void timerSlow_Tick(object sender, EventArgs e)
-        {
-            var firstOrDefault = _netDevices.FirstOrDefault(netdev => netdev.MAC != null && string.IsNullOrEmpty(netdev.MACVendor));
-            if (firstOrDefault != null)
-            {
-                firstOrDefault.MacLookup();
-            }
-
+        {            
+            // why did I do this?
             dataListView1.AdditionalFilter = new ModelFilter(FilterPredicate);
         }
 
@@ -279,15 +279,36 @@ namespace RoundHouse
         {
             CaptureDeviceList devices = CaptureDeviceList.Instance;
 
-            foreach (var captureDevice in devices.Where(d => d is NpcapDevice))
+            foreach (var captureDevice in devices.Where(d => d is LibPcapLiveDevice))
             {
                 captureDevice.OnPacketArrival += CaptureDeviceOnOnPacketArrival;
-                captureDevice.Open(DeviceMode.Promiscuous);
+                captureDevice.Open(DeviceModes.Promiscuous);                
                 captureDevice.StartCapture();
             }
 
             startupWorker.RunWorkerAsync();
+            Thread t = new Thread(MaintainerThread);
+            t.Start();
         }
+
+        private void MaintainerThread()
+        {
+            Thread.Sleep(2000); // delay start;
+            var run = true;
+            while (run)
+            {
+                var firstOrDefault = _netDevices.FirstOrDefault(netdev => netdev.MAC != null && string.IsNullOrEmpty(netdev.MACVendor));
+                if (firstOrDefault != null)
+                {
+                    firstOrDefault.MacLookup();
+                }
+                
+                Thread.Sleep(3000);
+            }
+            MessageBox.Show("Maintainer finished");
+            
+        }
+       
     }
 
     [Serializable]

@@ -125,9 +125,7 @@ namespace RoundHouse
         public async void MacLookup()
         {
             if (_mac != null && !_lookedUpMac)
-            {
-                if (Settings.Default.MacVendors == null)
-                    Settings.Default.MacVendors = new MacDictionary();
+            {              
 
                 string s = "";
                 if (Settings.Default.MacVendors.ContainsKey(_mac.ToString()))
@@ -141,7 +139,8 @@ namespace RoundHouse
 
                     try
                     {
-                        s = await client.DownloadStringTaskAsync("https://api.macvendors.com/" +
+                        
+                        s = client.DownloadString("https://api.macvendors.com/" +
                                                                  System.Web.HttpUtility.UrlEncode(_mac.ToString()));
                         MACVendor = s;
                         Settings.Default.MacVendors.AddEntry(_mac.ToString(), s);
